@@ -290,6 +290,7 @@ public class Master
 	/*
 	 * Requerimiento RFC11 CONSULTAR COMPRA DE BOLETAS
 	 */
+	
 	public ArrayList<DevolverRF11> consultarCompraBoletas(int idGerente, ConsultaRF11 consuulta) throws Exception
 	{
 		consultaDao = consultaDao == null ? new ConsultaDao(connectionDataPath) : consultaDao;
