@@ -23,6 +23,7 @@ import Vos.CompaniaTeatro;
 import Vos.ConsultaFuncion;
 import Vos.ConsultaRF11;
 import Vos.ConsultaRF9;
+import Vos.ConsultaRFC5;
 import Vos.DevolverRF11;
 import Vos.Espectaculo;
 import Vos.Funcion;
@@ -30,6 +31,8 @@ import Vos.Localidad;
 import Vos.Preferencia;
 import Vos.Reporte;
 import Vos.ReporteAsistencia;
+import Vos.ReporteCompania;
+import Vos.ReporteRFC5;
 import Vos.Sitio;
 import Vos.Usuario;
 
@@ -57,6 +60,11 @@ public class ConsultaDao
 	//public void setConn(Connection con){
 		//this.conn = con;
 	//}
+	
+	public Connection getcon()
+	{
+		return conexion;
+	}
 
 
 	private void initConnectionData(String conectionData) 
@@ -869,6 +877,134 @@ public class ConsultaDao
 	/*
 	 * Requerimiento RFC5 CONSULTAR RENTABILIDAD DE UNA COMPAÑÍA (BONO)
 	 */
+	public ArrayList<ReporteRFC5> rentabilidadCompania(Integer idUsuario,ConsultaRFC5 consulta) throws Exception
+	{
+		ArrayList<ReporteRFC5> devolver = new ArrayList<ReporteRFC5>();
+		
+		PreparedStatement prepStmt = null;
+		
+		
+		try 
+		{
+			establecerConexion();
+			//Verifica si es un usuario
+			String sql = "SELECT * FROM USUARIOS WHERE IDUSUARIO="+idUsuario;
+			prepStmt = conexion.prepareStatement(sql);
+			ResultSet rs = prepStmt.executeQuery();
+			String rol = "NADA";
+			
+			//Valores a devolver//
+			int idSitio = 0;
+			int idEspectaculo = 0;
+			String categoria = "";
+			int numBoletasVendidas = 0;
+			int cantAsistentes =0;
+			int proporcionAsistencia = 0;
+			int valorTotalFacturado =0;
+			
+			Format formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+			Date fecha = consulta.getFechaInicial();
+			String fechaAInsertar = formatter.format(fecha);
+		
+			Date fecha2 = consulta.getFechaFinal();
+			String fechaAInsertar2 = formatter.format(fecha2);
+		
+			
+			while(rs.next())
+			{
+				//Asigna el rol
+				rol = rs.getString("ROL");
+				System.out.println(rol);
+			}
+			
+			//Si es administrador 
+			if(rol.equals("ADMINISTRADOR"))
+			{	
+				
+				
+				sql = "SELECT SITIOS.IDSITIO,ESPECTACULOS.IDESPECTACULO,CATEGORIAS.NOMBRE, SITIOS.CAPACIDAD,BOLETAS.COSTO,COUNT(BOLETAS.IDBOLETA) AS CANTBOL";
+				sql += " FROM SITIOS INNER JOIN FUNCIONES ON SITIOS.IDSITIO = FUNCIONES.SITIO_IDS";
+				sql += " INNER JOIN ESPECTACULOS ON ESPECTACULOS.IDESPECTACULO = FUNCIONES.ESP_IDESP";
+				sql += " INNER JOIN BOLETAS ON BOLETAS.FU_IDF = FUNCIONES.IDFUNCION";
+				sql += " INNER JOIN CLASIFICACION ON CLASIFICACION.ESP_IDESP = ESPECTACULOS.IDESPECTACULO";
+				sql += " INNER JOIN CATEGORIAS ON CATEGORIAS.IDCATEGORIA = CLASIFICACION.CAT_IDCAT";
+				sql += " WHERE FUNCIONES.FECHA BETWEEN TO_DATE('"+ fechaAInsertar + "' , 'YYYY-MM-DD HH24:MI:SS') AND TO_DATE('"+ fechaAInsertar2 + "' , 'YYYY-MM-DD HH24:MI:SS')";
+				sql += " group by SITIOS.IDSITIO, ESPECTACULOS.IDESPECTACULO, CATEGORIAS.NOMBRE, SITIOS.CAPACIDAD, BOLETAS.COSTO";
+						
+				prepStmt = conexion.prepareStatement(sql);
+				ResultSet rs2 = prepStmt.executeQuery();
+				
+				while(rs2.next())
+				{
+					idSitio = rs2.getInt("IDSITIO");
+					idEspectaculo = rs2.getInt("IDESPECTACULO");
+					categoria = rs2.getString("NOMBRE");
+					numBoletasVendidas = rs2.getInt("CANTBOL");
+					cantAsistentes = numBoletasVendidas;
+					proporcionAsistencia = (rs2.getInt("CAPACIDAD")/numBoletasVendidas);
+					valorTotalFacturado =numBoletasVendidas*rs2.getInt("COSTO");
+					
+					ReporteRFC5 nuevo = new ReporteRFC5(idSitio, idEspectaculo, categoria, numBoletasVendidas, cantAsistentes, proporcionAsistencia, valorTotalFacturado);
+					devolver.add(nuevo);
+					
+				}
+				
+									}
+		
+			//Si es de la compañia 
+			if(rol.equals("COMPANIATEATRO"))
+			{
+				sql = "SELECT SITIOS.IDSITIO,ESPECTACULOS.IDESPECTACULO,CATEGORIAS.NOMBRE, SITIOS.CAPACIDAD,BOLETAS.COSTO,COUNT(BOLETAS.IDBOLETA) AS CANTBOL";
+				sql += " FROM SITIOS INNER JOIN FUNCIONES ON SITIOS.IDSITIO = FUNCIONES.SITIO_IDS";
+				sql += " INNER JOIN ESPECTACULOS ON ESPECTACULOS.IDESPECTACULO = FUNCIONES.ESP_IDESP";
+				sql += " INNER JOIN BOLETAS ON BOLETAS.FU_IDF = FUNCIONES.IDFUNCION";
+				sql += " INNER JOIN CLASIFICACION ON CLASIFICACION.ESP_IDESP = ESPECTACULOS.IDESPECTACULO";
+				sql += " INNER JOIN CATEGORIAS ON CATEGORIAS.IDCATEGORIA = CLASIFICACION.CAT_IDCAT";
+				sql += " WHERE FUNCIONES.FECHA BETWEEN TO_DATE('"+ fechaAInsertar + "' , 'YYYY-MM-DD HH24:MI:SS') AND TO_DATE('"+ fechaAInsertar2 + "' , 'YYYY-MM-DD HH24:MI:SS')";
+				sql += " group by SITIOS.IDSITIO, ESPECTACULOS.IDESPECTACULO, CATEGORIAS.NOMBRE, SITIOS.CAPACIDAD, BOLETAS.COSTO";
+						
+				prepStmt = conexion.prepareStatement(sql);
+				ResultSet rs3 = prepStmt.executeQuery();
+				
+				while(rs3.next())
+				{
+					idSitio = rs3.getInt("IDSITIO");
+					idEspectaculo = rs3.getInt("IDESPECTACULO");
+					categoria = rs3.getString("NOMBRE");
+					numBoletasVendidas = rs3.getInt("CANTBOL");
+					cantAsistentes = numBoletasVendidas;
+					proporcionAsistencia = (rs3.getInt("CAPACIDAD")/numBoletasVendidas);
+					valorTotalFacturado =numBoletasVendidas*rs3.getInt("COSTO");
+					
+					ReporteRFC5 nuevo = new ReporteRFC5(idSitio, idEspectaculo, categoria, numBoletasVendidas, cantAsistentes, proporcionAsistencia, valorTotalFacturado);
+					devolver.add(nuevo);
+					
+				}
+			}
+			
+			
+
+		} catch (SQLException e) {
+			System.err.println("SQLException in executing:");
+			e.printStackTrace();
+			throw e;
+		} finally {
+			if (prepStmt != null) {
+				try {
+					prepStmt.close();
+				} catch (SQLException exception) {
+					System.err.println("SQLException in closing Stmt:");
+					exception.printStackTrace();
+					throw exception;
+				}
+			}
+			if (this.conexion != null)
+				closeConnection(this.conexion);
+		}
+
+		
+		return devolver;
+	}
 	
 	/*
 	 * Requerimiento RFC6 OBTENER LOS DATOS DE LOS ESPECTÁCULOS MÁS POPULARES (BONO)

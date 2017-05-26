@@ -20,6 +20,7 @@ import Vos.Boleta;
 import Vos.Cliente;
 import Vos.ConsultaRF11;
 import Vos.ConsultaRF9;
+import Vos.ConsultaRFC5;
 import Vos.DevolverRF11;
 import Vos.Funcion;
 import Vos.InfoCompraAbonamiento;
@@ -28,6 +29,7 @@ import Vos.MensajeDevolucion;
 import Vos.Preferencia;
 import Vos.ReporteAsistencia;
 import Vos.ReporteCompania;
+import Vos.ReporteRFC5;
 
 @Path("clienteServices")
 public class ClienteServices
@@ -312,4 +314,29 @@ public class ClienteServices
 		}
 		return Response.status(200).entity(mens).build();
 	}
+	
+	/*
+	 * Requerimiento RFC5 CONSULTAR RENTABILIDAD DE UNA COMPAÑÍA (BONO)
+	 */
+	@POST
+	@Path("/rentabilidadCompania/{id: \\d+}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response rentabilidadCompania(@PathParam("id") int id,ConsultaRFC5 consulta) throws Exception
+	{
+		ArrayList<ReporteRFC5> mens = null;
+		Master mas = Master.darInstancia(getPath());
+		try 
+		{
+			mens = mas.rentabilidadCompania(id, consulta);
+			System.out.println(mens);
+		} catch (Exception e) {
+			return Response.status(500).entity(doErrorMessage(e)).build();
+		}
+		return Response.status(200).entity(mens).build();
+
+	}
+	
+	
+	
 }

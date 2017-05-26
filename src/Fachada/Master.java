@@ -1,5 +1,7 @@
 package Fachada;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import Dao.BoletasDao;
@@ -12,16 +14,19 @@ import Vos.Cliente;
 import Vos.CompaniaTeatro;
 import Vos.ConsultaRF11;
 import Vos.ConsultaRF9;
+import Vos.ConsultaRFC5;
 import Vos.DevolverRF11;
 import Vos.Espectaculo;
 import Vos.Funcion;
 import Vos.InfoCompraAbonamiento;
 import Vos.InfoCompraBoleta;
+import Vos.ListaFunciones;
 import Vos.MensajeDevolucion;
 import Vos.Preferencia;
 import Vos.Reporte;
 import Vos.ReporteAsistencia;
 import Vos.ReporteCompania;
+import Vos.ReporteRFC5;
 import Vos.Sitio;
 import Vos.Usuario;
 
@@ -55,6 +60,32 @@ public class Master
 		boletasDao = new BoletasDao(connectionDataPath);
 		funcionDao = new FuncionDao(connectionDataPath);
 		companiaDao = new CompaniaDao(connectionDataPath);
+	}
+	
+	public ListaFunciones darFuncionesLocal(Integer pId) throws Exception
+	{
+		ListaFunciones videos;
+		ConsultaDao dao = new ConsultaDao(connectionDataPath);
+		Connection conn2 = dao.getcon();
+		try {	
+			
+			
+			ArrayList<Funcion> videosLocal = dao.darFuncionesEspectaculos(pId);
+			videos = new ListaFunciones(videosLocal);
+			System.out.println("size:" + videosLocal.size());
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			try {
+				dao.closeConnection(conn2);;
+				
+			} catch (SQLException exception) {
+				System.err.println("SQLException closing resources:" + exception.getMessage());
+				exception.printStackTrace();
+				throw exception;
+			}
+		}
+		return videos; 
 	}
 	
 	///////////////////////////////////////////////////////////////
@@ -304,6 +335,14 @@ public class Master
 	{
 		consultaDao = consultaDao == null ? new ConsultaDao(connectionDataPath) : consultaDao;
 		return consultaDao.consultarBuenosClientes(idGerente);
+	}
+	
+	public ArrayList<ReporteRFC5> rentabilidadCompania(Integer idUsuario,ConsultaRFC5 consulta) throws Exception
+	{
+		consultaDao = consultaDao == null ? new ConsultaDao(connectionDataPath) : consultaDao;
+		return consultaDao.rentabilidadCompania(idUsuario, consulta);
+	
+		
 	}
 	
 }
